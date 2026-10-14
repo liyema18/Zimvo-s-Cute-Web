@@ -1,0 +1,222 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zimvo's Little World 💗</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#ffe1ef,#eee5ff);
+  color: #55344f;
+}
+header { text-align:center; padding:22px; }
+nav { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+button {
+  border:0; border-radius:14px; padding:12px;
+  background:#df5d98; color:white; font-weight:bold;
+}
+main { max-width:700px; margin:auto; padding:14px; }
+.page { display:none; }
+.page.active { display:block; }
+.card {
+  background:#ffffffdf; border-radius:20px;
+  padding:18px; margin:14px 0;
+}
+input,textarea,select {
+  box-sizing:border-box; width:100%;
+  padding:12px; margin:8px 0;
+  border:1px solid #e7cddd; border-radius:12px;
+}
+video { width:100%; border-radius:16px; }
+.board {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:8px; max-width:330px; margin:15px auto;
+}
+.cell { aspect-ratio:1; font-size:32px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>💗 Zimvo's Little World 💗</h1>
+  <p>Music, memories, photos and fun 🌸</p>
+</header>
+<nav>
+  <button onclick="page('home')">🏡 Home</button>
+  <button onclick="page('music')">🎵 Music</button>
+  <button onclick="page('quotes')">✨ Quotes</button>
+  <button onclick="page('camera')">📸 Camera</button>
+  <button onclick="page('diary')">📔 Diary</button>
+  <button onclick="page('game')">⭕ XO</button>
+</nav>
+<main>
+  <section id="home" class="page active">
+    <div class="card">
+      <h2>Hi, Zimvo! 🌷</h2>
+      <p>Keep dancing, dreaming and being yourself.</p>
+      <p>You deserve happiness and beautiful memories. 💕</p>
+    </div>
+  </section>
+
+  <section id="music" class="page">
+    <div class="card">
+      <h2>🎵 Your music</h2>
+      <input type="file" id="song" accept="audio/*">
+      <audio id="player" controls style="width:100%"></audio>
+    </div>
+  </section>
+
+  <section id="quotes" class="page">
+    <div class="card">
+      <h2>✨ Inspiration</h2>
+      <p id="quote">You are capable of wonderful things.</p>
+      <button onclick="newQuote()">New quote 💗</button>
+    </div>
+  </section>
+
+  <section id="camera" class="page">
+    <div class="card">
+      <h2>📸 Cute camera</h2>
+      <video id="cam" autoplay playsinline></video>
+      <button onclick="startCamera()">Start camera</button>
+      <button onclick="takePhoto()">Take photo</button>
+      <div id="photo"></div>
+    </div>
+  </section>
+
+  <section id="diary" class="page">
+    <div class="card">
+      <h2>📔 My diary</h2>
+      <input id="title" placeholder="Entry title">
+      <select id="mood">
+        <option>😊 Happy</option>
+        <option>🥰 Loved</option>
+        <option>😌 Peaceful</option>
+        <option>😔 Sad</option>
+        <option>🎶 Musical</option>
+      </select>
+      <textarea id="thoughts" placeholder="Dear diary..."></textarea>
+      <button onclick="saveDiary()">Save entry</button>
+      <div id="entries"></div>
+    </div>
+  </section>
+
+  <section id="game" class="page">
+    <div class="card">
+      <h2>⭕ XO Game</h2>
+      <p id="status">X's turn</p>
+      <div id="board" class="board"></div>
+      <button onclick="resetGame()">Play again</button>
+    </div>
+  </section>
+</main>
+<script>
+function page(id) {
+  document.querySelectorAll('.page').forEach(p =>
+    p.classList.toggle('active', p.id === id)
+  );
+}
+document.getElementById('song').onchange = e => {
+  const f = e.target.files[0];
+  if (f) document.getElementById('player').src =
+    URL.createObjectURL(f);
+};
+const starts = ['You are','Your dreams are','You can'];
+const middles = ['stronger than you think','worth celebrating',
+  'capable of amazing things','worthy of kindness'];
+const ends = ['Keep going 💗','Believe in yourself 🌸',
+  'Take it one step at a time ✨'];
+function newQuote() {
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+  document.getElementById('quote').textContent =
+    pick(starts)+' '+pick(middles)+'. '+pick(ends);
+}
+let stream;
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'user'},audio:false
+    });
+    document.getElementById('cam').srcObject = stream;
+  } catch(e) {
+    alert('Allow camera access and open this site over HTTPS.');
+  }
+}
+function takePhoto() {
+  const v=document.getElementById('cam');
+  if(!v.videoWidth) return alert('Start the camera first.');
+  const c=document.createElement('canvas');
+  c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  const a=document.createElement('a');
+  a.href=c.toDataURL('image/jpeg');
+  a.download='zimvo-photo.jpg';a.click();
+}
+function saveDiary() {
+  const body=document.getElementById('thoughts').value.trim();
+  if(!body) return alert('Write something first.');
+  const list=JSON.parse(localStorage.getItem('zimvoDiary')||'[]');
+  list.unshift({
+    title:document.getElementById('title').value,
+    mood:document.getElementById('mood').value,
+    body,date:new Date().toLocaleString()
+  });
+  localStorage.setItem('zimvoDiary',JSON.stringify(list));
+  document.getElementById('thoughts').value='';
+  renderDiary();
+}
+function renderDiary() {
+  const list=JSON.parse(localStorage.getItem('zimvoDiary')||'[]');
+  document.getElementById('entries').innerHTML='';
+  list.forEach((e,i)=>{
+    const d=document.createElement('div');
+    d.className='card';
+    const h=document.createElement('h3');
+    h.textContent=e.title||'Memory';
+    const p=document.createElement('p');
+    p.textContent=e.date+' · '+e.mood+' · '+e.body;
+    const b=document.createElement('button');
+    b.textContent='Delete';
+    b.onclick=()=>{
+      list.splice(i,1);
+      localStorage.setItem('zimvoDiary',JSON.stringify(list));
+      renderDiary();
+    };
+    d.append(h,p,b);document.getElementById('entries').append(d);
+  });
+}
+let cells=Array(9).fill(''),turn='X',done=false;
+const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],
+[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function renderGame() {
+  const b=document.getElementById('board');b.innerHTML='';
+  cells.forEach((v,i)=>{
+    const el=document.createElement('button');
+    el.className='cell';el.textContent=v;el.disabled=!!v||done;
+    el.onclick=()=>move(i);b.append(el);
+  });
+}
+function move(i) {
+  if(done||cells[i])return;
+  cells[i]=turn;
+  if(wins.some(line=>line.every(n=>cells[n]===turn))) {
+    done=true;document.getElementById('status').textContent=turn+' wins! 🎉';
+  } else if(cells.every(Boolean)) {
+    done=true;document.getElementById('status').textContent='Draw! 🤝';
+  } else {
+    turn=turn==='X'?'O':'X';
+    document.getElementById('status').textContent=turn+"'s turn";
+  }
+  renderGame();
+}
+function resetGame() {
+  cells=Array(9).fill('');turn='X';done=false;
+  document.getElementById('status').textContent="X's turn";
+  renderGame();
+}
+renderDiary();renderGame();
+</script>
+</body>
+</html>
